@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
@@ -6,7 +6,6 @@ import uvicorn
 import mysql.connector
 import logging
 import time
-import datetime
 
 app = FastAPI()
 base_dir = Path("upload")
@@ -31,8 +30,11 @@ def get_db_conn():
         logger.error(f"Error connecting to the database: {err}")
         raise HTTPException(status_code=500, detail=f"Database connection error: {err}")
 
+def hfc(content):
+    return hashlib.sha256(content).hexdigest()
+
 @app.post("/upload/")
-async def upload_file(file: UploadFile = File(...)):
+async def upload_file(request: Request, file: UploadFile = File(...)):
     if file.filename == "":
         raise HTTPException(status_code=400, detail="No file uploaded")
 
@@ -45,23 +47,31 @@ async def upload_file(file: UploadFile = File(...)):
         subdir.mkdir()
 
     file_path = subdir / (file.filename.rsplit(".", 1)[0] + ".py")
-    with open(file_path, "wb") as f:
-        content = await file.read()
-        f.write(content)
+    try:
+        with open(file_path, "wb") as f:
+            content = await file.read()
+            f.write(content)
+    except Exception as e:
+        logger.error(f"Error saving file: {e}")
+        raise HTTPException(status_code=500, detail=f"Error saving file: {e}")
 
-        #timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
-        timestamp = int(time.time())
     try:
         conn = get_db_conn()
         cursor = conn.cursor()
+
+        #timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
+        timestamp = int(time.time())
+        client_ip = request.client.host
+
         cursor.execute(
-            "INSERT INTO files (filename, user, pw, created_at, updated_at, status) VALUES (%s, %s, %s, %s, %s, %s)",
-            (file.filename, db_config['user'], db_config['password'], timestamp, timestamp, "SUBMITTED")
+            "INSERT INTO files (filename, username, password, created_at, updated_at, status) VALUES (%s, %s, %s, %s, %s, %s)",
+            (file.filename, client_ip, db_config['password'], timestamp, timestamp, "SUBMITTED")
         )
         conn.commit()
         file_id = cursor.lastrowid
         cursor.close()
         conn.close()
+
     except mysql.connector.Error as err:
         logger.error(f"Database error: {err}")
         raise HTTPException(status_code=500, detail=f"Database error: {err}")
@@ -78,6 +88,7 @@ async def upload_file(file: UploadFile = File(...)):
         print("="*40 + "\n")
 
     return {"id": file_id, "status": "SUBMITTED"}
+
 
 
 @app.get("/", response_class=HTMLResponse)
