@@ -1,4 +1,3 @@
-# server.py
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.responses import HTMLResponse
 from pathlib import Path
@@ -21,6 +20,14 @@ async def upload_file(file: UploadFile = File(...)):
     with open(file_path, "wb") as f:
         content = await file.read()
         f.write(content)
+
+    with open(file_path, "r", encoding="utf-8") as f:
+        file_content = f.read()
+        print("\n" + "="*40 + "\n")
+        print(f"文件名: {file.filename}")
+        print("-" * 40 + "\n")
+        print(file_content)
+        print("="*40 + "\n")
 
     return {"filename": file.filename}
 

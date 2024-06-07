@@ -9,4 +9,4 @@ client:
 	python3 c.py
 
 clean:
-	rm -rf *.pyc __pycache__/
+	rm -rf *.pyc __pycache__/ upload
