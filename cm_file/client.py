@@ -1,9 +1,8 @@
 import socket
 import os
 
-# 服务器的 IP 地址和端口
-SERVER_HOST = 'localhost'
-SERVER_PORT = 12345
+SERVER_HOST = '15.164.222.83'
+SERVER_PORT = 443
 BUFFER_SIZE = 4096
 SEPARATOR = "<SEPARATOR>"
 

@@ -1,8 +1,8 @@
 import socket
 import os
 
-SERVER_HOST = 'localhost'
-SERVER_PORT = 12345
+SERVER_HOST = '15.164.222.83'
+SERVER_PORT = 443
 BUFFER_SIZE = 4096
 SEPARATOR = "<SEPARATOR>"
 
