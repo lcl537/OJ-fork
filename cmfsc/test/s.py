@@ -20,9 +20,9 @@ logger = logging.getLogger(__name__)
 
 db_config = {
     "user": "root",
-    "password": "H2b2g58431*",
+    "password": "12345",
     "host": "localhost",
-    "database": "file_upload"
+    "database": "files"
 }
 
 def get_db_conn():
@@ -66,8 +66,8 @@ async def upload_file(request: Request, file: UploadFile = File(...)):
         client_ip = request.client.host
 
         cursor.execute(
-            "INSERT INTO files (filename, username, password, created_at, updated_at, status) VALUES (%s, %s, %s, %s, %s, %s)",
-            (file.filename, client_ip, db_config['password'], timestamp, timestamp, "SUBMITTED")
+            "INSERT INTO submission (username, password, created_at, updated_at, status) VALUES (%s, %s, %s, %s, %s)",
+            (client_ip, db_config['password'], timestamp, timestamp, "SUBMITTED")
         )
         conn.commit()
         file_id = cursor.lastrowid
