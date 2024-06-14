@@ -1,5 +1,5 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 import uvicorn
@@ -8,6 +8,7 @@ import logging
 import time
 import hashlib
 import os
+import requests
 
 app = FastAPI()
 base_dir = Path("upload")
@@ -65,21 +66,13 @@ async def upload_file(request: Request, file: UploadFile = File(...)):
         client_ip = request.client.host
 
         cursor.execute(
-            "INSERT INTO files (username, password, created_at, updated_at, status) VALUES (%s, %s, %s, %s, %s)",
-            (client_ip, db_config['password'], timestamp, timestamp, "SUBMITTED")
+            "INSERT INTO files (filename, username, password, created_at, updated_at, status) VALUES (%s, %s, %s, %s, %s, %s)",
+            (file.filename, client_ip, db_config['password'], timestamp, timestamp, "SUBMITTED")
         )
         conn.commit()
         file_id = cursor.lastrowid
         cursor.close()
         conn.close()
-
-        exec_server_ip = "代码执行服务器的IP地址"
-        url = f"http://{exec_server_ip}:8000/receive_code/"
-        files = {'file': open(file_path, 'rb')}
-        response = requests.post(url, files=files)
-        if response.status_code != 200:
-            logger.error(f"Failed to send code to exec server: {response.content}")
-            raise HTTPException(status_code=500, detail=f"Failed to send code to exec server")
 
     except mysql.connector.Error as err:
         logger.error(f"Database error: {err}")
@@ -107,11 +100,11 @@ async def get_new_code():
         file_record = cursor.fetchone()
 
         if file_record is None:
-            return HTTPException(status_code=204, detail="No new code available")
+            raise HTTPException(status_code=204, detail="No new code available")
 
         file_path = base_dir / file_record['filename']
         if not file_path.exists():
-            return HTTPException(status_code=500, detail="File not found on server")
+            raise HTTPException(status_code=500, detail="File not found on server")
 
         with open(file_path, 'rb') as file:
             file_content = file.read()
@@ -131,6 +124,26 @@ async def get_new_code():
         logger.error(f"Error fetching new code: {e}")
         raise HTTPException(status_code=500, detail=f"Error fetching new code: {e}")
 
+@app.patch("/update_status/{file_id}")
+async def update_status(file_id: int, status: str):
+    try:
+        conn = get_db_conn()
+        cursor = conn.cursor()
+
+        cursor.execute("UPDATE files SET status = %s, updated_at = %s WHERE id = %s", 
+                       (status, int(time.time()), file_id))
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        return {"status": "success"}
+    except mysql.connector.Error as err:
+        logger.error(f"Database error: {err}")
+        raise HTTPException(status_code=500, detail=f"Database error: {err}")
+    except Exception as e:
+        logger.error(f"Error updating status: {e}")
+        raise HTTPException(status_code=500, detail=f"Error updating status: {e}")
+
 @app.get("/", response_class=HTMLResponse)
 async def read_root():
     try:
@@ -141,5 +154,5 @@ async def read_root():
         raise HTTPException(status_code=404, detail="Page not found")
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="118.89.82.251", port=80)
+    uvicorn.run(app, host="0.0.0.0", port=8000)
 
