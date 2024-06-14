@@ -16,9 +16,9 @@ def main():
         try:
             response = upload_files(url, f)
             file_id = response.json().get("id")
-            print(f"文件 {f} 的ID是: {file_id}")
+            print(f"File {f} ID: {file_id}")
         except requests.exceptions.RequestException as e:
-            print(f"上传文件 {f} 时出错: {e}")
+            print(f"Upload file {f} error: {e}")
 
 if __name__ == "__main__":
     main()
