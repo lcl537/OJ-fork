@@ -3,7 +3,7 @@
 all: rc rs
 
 rs:
-	uvicorn s:app --host=0.0.0.0 --port=8000
+	uvicorn s:app --host=118.89.82.251 --port=80
 
 rc:
 	python3 c.py
