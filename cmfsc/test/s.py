@@ -113,7 +113,7 @@ async def get_new_code():
                        ("PROCESSING", int(time.time()), file_record['id']))
         conn.commit()
         cursor.close()
-        conn.close()
+        conn.close()i
 
         return Response(file_content, media_type='application/octet-stream')
 
@@ -121,28 +121,18 @@ async def get_new_code():
         logger.error(f"Database error: {err}")
         raise HTTPException(status_code=500, detail=f"Database error: {err}")
     except Exception as e:
-        logger.error(f"Error fetching new code: {e}")
-        raise HTTPException(status_code=500, detail=f"Error fetching new code: {e}")
+        logger.error(f"Error inserting file metadata into database: {e}")
+        raise HTTPException(status_code=500, detail=f"Error inserting file metadata into database: {e}")
 
-@app.patch("/update_status/{file_id}")
-async def update_status(file_id: int, status: str):
-    try:
-        conn = get_db_conn()
-        cursor = conn.cursor()
+    with open(file_path, "r", encoding="utf-8") as f:
+        file_content = f.read()
+        print("\n" + "="*40 + "\n")
+        print(f"文件名: {file.filename}")
+        print("-" * 40 + "\n")
+        print(file_content)
+        print("="*40 + "\n")
 
-        cursor.execute("UPDATE files SET status = %s, updated_at = %s WHERE id = %s", 
-                       (status, int(time.time()), file_id))
-        conn.commit()
-        cursor.close()
-        conn.close()
-
-        return {"status": "success"}
-    except mysql.connector.Error as err:
-        logger.error(f"Database error: {err}")
-        raise HTTPException(status_code=500, detail=f"Database error: {err}")
-    except Exception as e:
-        logger.error(f"Error updating status: {e}")
-        raise HTTPException(status_code=500, detail=f"Error updating status: {e}")
+    return {"id": file_id, "status": "SUBMITTED"}
 
 @app.get("/", response_class=HTMLResponse)
 async def read_root():
