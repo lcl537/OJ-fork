@@ -23,7 +23,7 @@ db_config = {
     "user": "root",
     "password": "12345",
     "host": "localhost",
-    "database": "submission"
+    "database": "files"
 }
 
 def get_db_conn():
@@ -37,7 +37,7 @@ def get_db_conn():
 #def hfc(content):
 #    return hashlib.sha256(content).hexdigest()
 
-@app.post("/upload/")
+@app.post("/submission/")
 async def upload_file(request: Request, file: UploadFile = File(...)):
     if file.filename == "":
         raise HTTPException(status_code=400, detail="No file uploaded")
