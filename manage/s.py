@@ -14,7 +14,7 @@ import sys
 app = FastAPI()
 base_dir = Path("submission")
 
-app.mount("/static", StaticFiles(directory="../user/fe"), name="fe")
+app.mount("/static", StaticFiles(directory="../user/qd"), name="qd")
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
