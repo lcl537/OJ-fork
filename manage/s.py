@@ -9,11 +9,12 @@ import time
 import hashlib
 import os
 import requests
+import sys
 
 app = FastAPI()
-base_dir = Path("upload")
+base_dir = Path("submission")
 
-app.mount("../user/fe", StaticFiles(directory="fe"), name="fe")
+app.mount("/static", StaticFiles(directory="../user/fe"), name="fe")
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -33,8 +34,8 @@ def get_db_conn():
         logger.error(f"Error connecting to the database: {err}")
         raise HTTPException(status_code=500, detail=f"Database connection error: {err}")
 
-def hfc(content):
-    return hashlib.sha256(content).hexdigest()
+#def hfc(content):
+#    return hashlib.sha256(content).hexdigest()
 
 @app.post("/upload/")
 async def upload_file(request: Request, file: UploadFile = File(...)):
@@ -49,7 +50,9 @@ async def upload_file(request: Request, file: UploadFile = File(...)):
     if not subdir.exists():
         subdir.mkdir()
 
-    file_path = subdir / (file.filename.rsplit(".", 1)[0] + ".py")
+    client_ip = request.client.host
+
+    file_path = subdir / (client_ip + ".py")
     try:
         with open(file_path, "wb") as f:
             content = await file.read()
@@ -63,7 +66,6 @@ async def upload_file(request: Request, file: UploadFile = File(...)):
         cursor = conn.cursor()
 
         timestamp = int(time.time())
-        client_ip = request.client.host
 
         cursor.execute(
             "INSERT INTO submission (username, password, created_at, updated_at, status) VALUES (%s, %s, %s, %s, %s)",
@@ -101,5 +103,9 @@ async def read_root():
         raise HTTPException(status_code=404, detail="Page not found")
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="118.89.82.251", port=80)
-
+    if len(sys.argv) != 3:
+        print("Usage: uvicorn s:app <ip> <port>")
+        sys.exit(1)
+    ip = sys.argv[1]
+    port = int(sys.argv[2])
+    uvicorn.run(app, host=ip, port=port)
