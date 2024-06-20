@@ -9,11 +9,12 @@ import time
 import hashlib
 import os
 import requests
+import sys
 
 app = FastAPI()
-base_dir = Path("upload")
+base_dir = Path("submission")
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/static", StaticFiles(directory="../user/fe"), name="fe")
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -22,7 +23,7 @@ db_config = {
     "user": "root",
     "password": "12345",
     "host": "localhost",
-    "database": "files"
+    "database": "submission"
 }
 
 def get_db_conn():
@@ -33,8 +34,8 @@ def get_db_conn():
         logger.error(f"Error connecting to the database: {err}")
         raise HTTPException(status_code=500, detail=f"Database connection error: {err}")
 
-def hfc(content):
-    return hashlib.sha256(content).hexdigest()
+#def hfc(content):
+#    return hashlib.sha256(content).hexdigest()
 
 @app.post("/upload/")
 async def upload_file(request: Request, file: UploadFile = File(...)):
@@ -49,7 +50,9 @@ async def upload_file(request: Request, file: UploadFile = File(...)):
     if not subdir.exists():
         subdir.mkdir()
 
-    file_path = subdir / (file.filename.rsplit(".", 1)[0] + ".py")
+    client_ip = request.client.host
+
+    file_path = subdir / (client_ip + ".py")
     try:
         with open(file_path, "wb") as f:
             content = await file.read()
@@ -63,7 +66,6 @@ async def upload_file(request: Request, file: UploadFile = File(...)):
         cursor = conn.cursor()
 
         timestamp = int(time.time())
-        client_ip = request.client.host
 
         cursor.execute(
             "INSERT INTO submission (username, password, created_at, updated_at, status) VALUES (%s, %s, %s, %s, %s)",
@@ -91,109 +93,19 @@ async def upload_file(request: Request, file: UploadFile = File(...)):
 
     return {"id": file_id, "status": "SUBMITTED"}
 
-@app.get("/new")
-async def get_new_code():
-    try:
-        conn = get_db_conn()
-        cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM files WHERE status = 'SUBMITTED' ORDER BY created_at ASC LIMIT 1")
-        file_record = cursor.fetchone()
-
-        if file_record is None:
-            raise HTTPException(status_code=204, detail="No new code available")
-
-        file_path = base_dir / file_record['filename']
-        if not file_path.exists():
-            raise HTTPException(status_code=500, detail="File not found on server")
-
-        with open(file_path, 'rb') as file:
-            file_content = file.read()
-
-        cursor.execute("UPDATE files SET status = %s, updated_at = %s WHERE id = %s", 
-                       ("PROCESSING", int(time.time()), file_record['id']))
-        conn.commit()
-        cursor.close()
-        conn.close()
-
-        return Response(file_content, media_type='application/octet-stream')
-
-    except mysql.connector.Error as err:
-        logger.error(f"Database error: {err}")
-        raise HTTPException(status_code=500, detail=f"Database error: {err}")
-    except Exception as e:
-        logger.error(f"Error inserting file metadata into database: {e}")
-        raise HTTPException(status_code=500, detail=f"Error inserting file metadata into database: {e}")
-
-    with open(file_path, "r", encoding="utf-8") as f:
-        file_content = f.read()
-        print("\n" + "="*40 + "\n")
-        print(f"文件名: {file.filename}")
-        print("-" * 40 + "\n")
-        print(file_content)
-        print("="*40 + "\n")
-
-    return {"id": file_id, "status": "SUBMITTED"}
-
-@app.get("/new")
-async def get_new_code():
-    try:
-        conn = get_db_conn()
-        cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM submission WHERE status = 'SUBMITTED' ORDER BY created_at ASC LIMIT 1")
-        file_record = cursor.fetchone()
-
-        if file_record is None:
-            raise HTTPException(status_code=204, detail="No new code available")
-
-        file_path = base_dir / file_record['filename']
-        if not file_path.exists():
-            raise HTTPException(status_code=500, detail="File not found on server")
-
-        with open(file_path, 'rb') as file:
-            file_content = file.read()
-
-        cursor.execute("UPDATE submission SET status = %s, updated_at = %s WHERE id = %s",
-                       ("PROCESSING", int(time.time()), file_record['id']))
-        conn.commit()
-        cursor.close()
-        conn.close()
-
-        return Response(file_content, media_type='application/octet-stream')
-
-    except mysql.connector.Error as err:
-        logger.error(f"Database error: {err}")
-        raise HTTPException(status_code=500, detail=f"Database error: {err}")
-    except Exception as e:
-        logger.error(f"Error inserting file metadata into database: {e}")
-        raise HTTPException(status_code=500, detail=f"Error inserting file metadata into database: {e}")
-
-@app.patch("/submission")
-async def update_submission(status: dict = Body(...)):
-    try:
-        conn = get_db_conn()
-        cursor = conn.cursor()
-        cursor.execute("UPDATE submission SET status = %s, updated_at = %s WHERE id = %s",
-                       (status['status'], int(time.time()), status['id']))
-        conn.commit()
-        cursor.close()
-        conn.close()
-        return {"status": "updated"}
-    except mysql.connector.Error as err:
-        logger.error(f"Database error: {err}")
-        raise HTTPException(status_code=500, detail=f"Database error: {err}")
-    except Exception as e:
-        logger.error(f"Error updating submission status: {e}")
-        raise HTTPException(status_code=500, detail=f"Error updating submission status: {e}")
-
 @app.get("/", response_class=HTMLResponse)
 async def read_root():
     try:
-        with open("./static/index.html", "r", encoding="utf-8") as f:
+        with open("../user/fe/index.html", "r", encoding="utf-8") as f:
             content = f.read()
             return HTMLResponse(content=content, status_code=200)
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="Page not found")
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="118.89.82.251", port=80)
-
+    if len(sys.argv) != 3:
+        print("Usage: uvicorn s:app <ip> <port>")
+        sys.exit(1)
+    ip = sys.argv[1]
+    port = int(sys.argv[2])
+    uvicorn.run(app, host=ip, port=port)

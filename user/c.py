@@ -1,4 +1,5 @@
 import requests
+import sys
 
 def upload_files(url, path):
     with open(path, "rb") as f:
@@ -8,9 +9,9 @@ def upload_files(url, path):
         else:
             response.raise_for_status()
 
-def main():
-    url = "http://0.0.0.0:8000/upload/"
-    path = ["./tc/test.rb", "./tc/sc.c"]
+def main(ip, port):
+    url = f"http://{ip}:{port}/submission/"
+    path = ["./test_code/test.rb", "./test_code/sc.c"]
     
     for f in path:
         try:
@@ -21,4 +22,11 @@ def main():
             print(f"Upload file {f} error: {e}")
 
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) != 3:
+        print("Usage: python c.py <ip> <port>")
+        sys.exit(1)
+
+    ip = sys.argv[1]
+    port = sys.argv[2]
+
+    main(ip, port)
