@@ -1,13 +1,14 @@
 from fastapi import FastAPI, HTTPException
 import subprocess
 import requests
+import uvicorn
 from pathlib import Path
 
 app = FastAPI()
 
 CODE_DIR = Path("./msfiles")
 ANSWER_FILE = Path("./answer.txt")
-MANAGE_SERVER_URL = "http://118.89.82.251:8000/submission"
+MANAGE_SERVER_URL = "http://0.0.0.0:8000/submission"
 
 @app.post("/execute/")
 async def execute_code():
@@ -31,5 +32,9 @@ async def execute_code():
     return {"status": status, "output": output, "error": error}
 
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    if len(sys.argv) != 3:
+        print("Usage: uvicorn e:app <ip> <port>")
+        sys.exit(1)
+    ip = sys.argv[1]
+    port = int(sys.argv[2])
+    uvicorn.run(app, host=ip, port=port)
