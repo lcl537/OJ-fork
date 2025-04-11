@@ -1,12 +1,12 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException, Request, Body
-from fastapi.responses import HTMLResponse, Response
+from fastapi.responses import HTMLResponse, Response, FileResponse
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 import uvicorn
 import mysql.connector
 import logging
 import time
-import hashlib
+#import hashlib
 import os
 import requests
 import sys
@@ -14,7 +14,7 @@ import sys
 app = FastAPI()
 base_dir = Path("submission")
 
-app.mount("/static", StaticFiles(directory="../user/qd"), name="qd")
+app.mount("/static", StaticFiles(directory="../user/fe"), name="fe")
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -108,4 +108,5 @@ if __name__ == "__main__":
         sys.exit(1)
     ip = sys.argv[1]
     port = int(sys.argv[2])
+    download_file_to_windows()
     uvicorn.run(app, host=ip, port=port)

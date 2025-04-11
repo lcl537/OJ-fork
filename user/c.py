@@ -23,7 +23,7 @@ def main(ip, port):
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
-        print("Usage: python c.py <ip> <port>")
+        print("Usage: python3 c.py <ip> <port>")
         sys.exit(1)
 
     ip = sys.argv[1]

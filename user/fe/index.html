@@ -3,22 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Code Submission</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Code Input Form</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script defer src="index.js"></script>
 </head>
 <body>
-    <h1>Code Submission</h1>
-    <form id="submissionForm">
-        <label for="username">Username:</label>
-        <input type="text" id="username" name="username" required><br><br>
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" required><br><br>
-        <label for="code">Code:</label><br>
-        <textarea id="code" name="code" rows="10" cols="50" required></textarea><br><br>
-        <button type="submit">Submit</button>
+    <form id="codeForm">
+        <label for="username">username:</label><br>
+        <input type="text" id="username" name="username" value=""><br><br>
+        
+        <label for="password">password:</label><br>
+        <input type="password" id="password" name="password" value=""><br><br>
+        
+        <label for="code">code:</label><br>
+        <textarea id="code" name="code" rows="4" cols="50"></textarea><br><br>
+        
+        <input type="submit" value="submit">
     </form>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <script src="index.js"></script>
 </body>
 </html>
 

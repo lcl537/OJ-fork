@@ -1,12 +1,9 @@
-.PHONY: all rc rs
+.PHONY: all re
 
-all: rc rs
+all: re
 
-rs:
-	uvicorn s:app --host=118.89.82.251 --port=80
-
-rc:
-	python3 c.py
+re:
+	uvicorn e:app --host=0.0.0.0 --port=8000
 
 clean:
-	rm -rf *.pyc __pycache__/ upload
+	rm -rf *.pyc __pycache__/
